@@ -6,10 +6,10 @@ from threading import Thread
 import requests
 from flask import Flask, jsonify, request
 
+from cache_module import Cache
 from database_module import Database
 from logging_module import logger
 from storage_module import Storage
-from cache_module import Cache
 
 app = Flask(__name__)
 
@@ -19,6 +19,8 @@ NOTIFICATION_SERVER = environ.get("NOTIFICATION_SERVER_URL")
 app.secret_key = AUTH_TOKEN
 
 # ====== Helper Class ======
+
+
 class FormParser:
     def __init__(self, data: dict):
         self.data = data
@@ -51,18 +53,28 @@ class FormParser:
                 "travelTotal": i["travelTotal"],
             }
 
-            self.upload_the_conveyances(i["travelDetails"]["conveyances"], new_data["travelId"])
-            self.upload_the_food_lodgings(i["travelDetails"]["foodLodgings"], new_data["travelId"])
-            self.upload_the_incidentals(i["travelDetails"]["incidentals"], new_data["travelId"])
+            self.upload_the_conveyances(
+                i["travelDetails"]["conveyances"], new_data["travelId"]
+            )
+            self.upload_the_food_lodgings(
+                i["travelDetails"]["foodLodgings"], new_data["travelId"]
+            )
+            self.upload_the_incidentals(
+                i["travelDetails"]["incidentals"], new_data["travelId"]
+            )
 
             if db_obj.upload_the_travel(new_data):
                 print("Travel details uploaded successfully")
-                logger.info(f"Travel details uploaded successfully for {self.data['empId']}")
+                logger.info(
+                    f"Travel details uploaded successfully for {self.data['empId']}"
+                )
                 self.is_travel_upload *= True
 
             else:
                 print("Travel details failed to upload")
-                logger.warning(f"Travel details failed to upload for {self.data['empId']}")
+                logger.warning(
+                    f"Travel details failed to upload for {self.data['empId']}"
+                )
                 self.is_travel_upload *= False
 
         return self.is_travel_upload, travel_ids
@@ -85,12 +97,16 @@ class FormParser:
             }
             if db_obj.upload_the_conveyance(new_data):
                 print("Conveyance details uploaded successfully")
-                logger.info(f"Conveyance details uploaded successfully for {self.data['empId']}")
+                logger.info(
+                    f"Conveyance details uploaded successfully for {self.data['empId']}"
+                )
                 self.is_travel_upload *= True
 
             else:
                 print("Conveyance details failed to upload")
-                logger.warning(f"Conveyance details failed to upload for {self.data['empId']}")
+                logger.warning(
+                    f"Conveyance details failed to upload for {self.data['empId']}"
+                )
                 self.is_travel_upload *= False
 
     def upload_the_food_lodgings(self, data: list, travel_id: str):
@@ -111,12 +127,16 @@ class FormParser:
 
             if db_obj.upload_the_food_lodging(new_data):
                 print("Food and Lodging details uploaded successfully")
-                logger.info(f"Food and Lodging details uploaded successfully for {self.data['empId']}")
+                logger.info(
+                    f"Food and Lodging details uploaded successfully for {self.data['empId']}"
+                )
                 self.is_travel_upload *= True
 
             else:
                 print("Food and Lodging details failed to upload")
-                logger.warning(f"Food and Lodging details failed to upload for {self.data['empId']}")
+                logger.warning(
+                    f"Food and Lodging details failed to upload for {self.data['empId']}"
+                )
                 self.is_travel_upload *= False
 
     def upload_the_incidentals(self, data: list, travel_id: str):
@@ -136,12 +156,16 @@ class FormParser:
 
             if db_obj.upload_the_incidental(new_data):
                 print("Incidental details uploaded successfully")
-                logger.info(f"Incidental details uploaded successfully for {self.data['empId']}")
+                logger.info(
+                    f"Incidental details uploaded successfully for {self.data['empId']}"
+                )
                 self.is_travel_upload *= True
 
             else:
                 print("Incidental details failed to upload")
-                logger.warning(f"Incidental details failed to upload for {self.data['empId']}")
+                logger.warning(
+                    f"Incidental details failed to upload for {self.data['empId']}"
+                )
                 self.is_travel_upload *= False
 
 
@@ -166,7 +190,10 @@ class Notification:
         Return: True if the message is sent successfully else False
         """
 
-        req_headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
+        req_headers = {
+            "Authorization": f"Bearer {AUTH_TOKEN}",
+            "Content-Type": "application/json",
+        }
         json_message = {"subject": subject, "receiver": receivers, "message": message}
         response = requests.post(
             url=f"{NOTIFICATION_SERVER}/email",
@@ -185,7 +212,10 @@ class Notification:
         Return: True if the message is sent successfully else False
         """
 
-        req_headers = {"Authorization": f"Bearer {AUTH_TOKEN}", "Content-Type": "application/json"}
+        req_headers = {
+            "Authorization": f"Bearer {AUTH_TOKEN}",
+            "Content-Type": "application/json",
+        }
         json_message = {"subject": subject, "receiver": receivers, "message": message}
         response = requests.post(
             url=f"{NOTIFICATION_SERVER}/sms",
@@ -197,7 +227,8 @@ class Notification:
         print(response.text)
 
         return response.json()["status"] == "success"
-    
+
+
 def match_the_values(travel_ids: list) -> dict:
     """Method to match the values from the cache
 
@@ -219,16 +250,15 @@ def match_the_values(travel_ids: list) -> dict:
         cache_amounts = cache_obj.get_all_values(bill_ids)
 
         for bill_amount, cache_amount in zip(bill_amounts, cache_amounts):
-
             if bill_amount == cache_amount:
                 print("Same amount", bill_amount, cache_amount)
 
             else:
                 print("Different amount", bill_amount, cache_amount)
 
-        
 
 # ====== App routes ======
+
 
 @app.route("/")
 def home_page():
@@ -259,11 +289,10 @@ def upload_form_data():
 
     travel_status, travel_ids = form.upload_the_travels()
     if travel_status:
-
-        print('travel_ids', travel_ids)
+        print("travel_ids", travel_ids)
 
         bill_status = match_the_values(travel_ids)
-        print('bill_status', bill_status)
+        print("bill_status", bill_status)
 
         # Thread(target=Notification.send_email, args=("Form uploaded successfully", ["hm0092374@gmail.com"], "Form uploaded successfully")).start()
         msg = {"status": "success", "message": "Form data uploaded successfully"}

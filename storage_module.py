@@ -1,12 +1,11 @@
-from os import environ
 import base64
 import random
 import string
+from os import environ
 
-from appwrite import client
-from appwrite import input_file
-from appwrite.services import storage
+from appwrite import client, input_file
 from appwrite.id import ID
+from appwrite.services import storage
 
 # ====== Environment Variables ======
 APPWRITE_PROJECT_ID = environ.get("APPWRITE_PROJECT_ID")
@@ -17,7 +16,11 @@ APPWRITE_BUCKET_ID = environ.get("APPWRITE_BUCKET_ID")
 class Storage:
     def __init__(self):
         client_app = client.Client()
-        client_app = client_app.set_endpoint("https://cloud.appwrite.io/v1").set_project(APPWRITE_PROJECT_ID).set_key(APPWRITE_API_KEY)
+        client_app = (
+            client_app.set_endpoint("https://cloud.appwrite.io/v1")
+            .set_project(APPWRITE_PROJECT_ID)
+            .set_key(APPWRITE_API_KEY)
+        )
         self.storage_app = storage.Storage(client_app)
 
     def generate_random_string(self, N=8):
@@ -27,7 +30,11 @@ class Storage:
         file_name = f"{self.generate_random_string()}.jpg"
         file_data = base64.b64decode(file_str)
 
-        result = self.storage_app.create_file(APPWRITE_BUCKET_ID, ID.unique(), input_file.InputFile.from_bytes(file_data, file_name, "image/jpeg"))
+        result = self.storage_app.create_file(
+            APPWRITE_BUCKET_ID,
+            ID.unique(),
+            input_file.InputFile.from_bytes(file_data, file_name, "image/jpeg"),
+        )
 
         return result["$id"]
 
